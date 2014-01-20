@@ -12,6 +12,16 @@ module.exports = function (grunt) {
 			sourceComments: 'none'
 		});
 
+		// Set the sourceMap path if the sourceComment was 'map', but set source-map was missing
+		if (options.sourceComments === 'map' && !options.sourceMap) {
+			options.sourceMap = true;
+		}
+
+		// set source map file and set sourceComments to 'map'
+		if (options.sourceMap) {
+			options.sourceComments = 'map';
+		}
+
 		async.eachSeries(this.files, function (el, next) {
 			var src = el.src[0];
 
@@ -19,7 +29,7 @@ module.exports = function (grunt) {
 				return next();
 			}
 
-			sass.render({
+			var renderOpts = {
 				file: src,
 				success: function (css, map) {
 					grunt.file.write(el.dest, css);
@@ -37,9 +47,20 @@ module.exports = function (grunt) {
 				},
 				includePaths: options.includePaths,
 				outputStyle: options.outputStyle,
-				sourceComments: options.sourceComments,
-				sourceMap: options.sourceMap
-			});
+				sourceComments: options.sourceComments
+			};
+
+			if (options.sourceMap) {
+				if (options.sourceMap === true) {
+					renderOpts.sourceMap = el.dest + '.map';
+				} else {
+					// FIXME: options.sourceMap = path.resolve(cwd, options.sourceMap);
+					renderOpts.sourceMap = options.sourceMap;
+				}
+			}
+
+			sass.render(renderOpts);
+
 		}, this.async());
 	});
 };
